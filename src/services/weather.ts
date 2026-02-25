@@ -1,7 +1,9 @@
+const WEATHER_API_KEY = import.meta.env.VITE_WEATHER_API_KEY
+
 export const getWeather = async (city: string = "Lima") => {
 
     try {
-        const response = await fetch(`https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${city}?unitGroup=metric&include=current&key=QJG58DERK557DYPE2AZBH9HS2&contentType=json`)
+        const response = await fetch(`https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${city}?unitGroup=metric&include=current&key=${WEATHER_API_KEY}&contentType=json`)
 
         if (response.status === 400) {
             throw new Error("CITY_NOT_FOUND")
