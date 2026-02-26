@@ -2,9 +2,10 @@
     import { MENU } from "../data/products";
     import ProductCard from "../components/ProductCard.svelte";
     import CartSummary from "../components/CartSummary.svelte";
+    import { cart } from "../domain/cart.svelte";
 </script>
 
-<main class="layout">
+<main class="layout" class:has-cart={cart.items.length > 0}>
     <section class="menu-section">
         <header>
             <h1>Burgers</h1>
@@ -26,28 +27,42 @@
 <style>
     :global(body) {
         margin: 0;
-        font-family: system-ui, sans-serif;
     }
 
     .layout {
-        display: grid;
-        grid-template-columns: 2fr 1fr;
-        height: 100vh;
+        display: flex;
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
     }
 
     .menu-section {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        flex: 1;
         padding: 2rem;
+        height: 100%;
         overflow-y: auto;
     }
+
     .cart-section {
-        height: 100vh;
-        position: sticky;
-        top: 0;
+        width: 350px;
+        height: 100%;
+        margin-right: -350px;
+        transition: margin-right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .layout.has-cart .cart-section {
+        margin-right: 0;
     }
 
     .product-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        width: 80%;
+        grid-template-columns: repeat(auto-fit, 275px);
+        justify-content: center;
         gap: 1.5rem;
         margin-top: 2rem;
     }

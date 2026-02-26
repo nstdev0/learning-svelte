@@ -1,17 +1,12 @@
 import type { Product } from '../data/products';
 
-export interface CartItem {
-    id: string;
-    name: string;
-    price: number;
+export interface CartItem extends Product {
     quantity: number;
 }
 
 class CartSystem {
-    // $state envuelve nuestro arreglo. Svelte reaccionará a cualquier mutación aquí.
     items = $state<CartItem[]>([]);
 
-    // $derived se recalcula automáticamente SOLO cuando "items" cambia.
     totalPrice = $derived(
         this.items.reduce((total, item) => total + (item.price * item.quantity), 0)
     );
@@ -20,12 +15,20 @@ class CartSystem {
         this.items.reduce((total, item) => total + item.quantity, 0)
     );
 
-    // Métodos puros de negocio
     addItem(product: Product, quantity: number) {
+        // 1. Buscamos el ítem UNA sola vez y guardamos su referencia
         const existingItem = this.items.find(item => item.id === product.id);
 
+        // 2. Calculamos la cantidad actual en el carrito
+        const currentQuantity = existingItem?.quantity || 0;
+
+        // 3. Validación de negocio
+        if (product.stock < currentQuantity + quantity) {
+            throw new Error("Stock insuficiente.");
+        }
+
+        // 4. Mutación reactiva del estado
         if (existingItem) {
-            // Mutar la propiedad directamente disparará la reactividad en la UI.
             existingItem.quantity += quantity;
         } else {
             this.items.push({ ...product, quantity });
@@ -41,5 +44,4 @@ class CartSystem {
     }
 }
 
-// Exportamos una única instancia (Singleton) para que toda la app comparta el mismo carrito.
 export const cart = new CartSystem();

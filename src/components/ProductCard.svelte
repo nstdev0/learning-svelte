@@ -8,8 +8,14 @@
     let quantityState = $state(1);
 
     const handleAddItem = (product: Product, quantity: number) => {
-        cart.addItem(product, quantity);
-        quantityState = 1;
+        try {
+            cart.addItem(product, quantity);
+            quantityState = 1;
+        } catch (err) {
+            if (err instanceof Error) {
+                alert(err.message);
+            }
+        }
     };
     const handleInputChange = (e: Event) => {
         quantityState = Number((e.target as HTMLInputElement).value);
@@ -18,6 +24,7 @@
 
 <div class="card">
     <h3>{product.name}</h3>
+    <span class="stock">Stock: {product.stock}</span>
     <p class="desc">{product.description}</p>
     <span class="price">$ {product.price.toFixed(2)}</span>
     <div class="footer">
@@ -42,6 +49,10 @@
 </div>
 
 <style>
+    .stock {
+        font-size: 0.8rem;
+        color: #666;
+    }
     .card {
         border: 1px solid #ddd;
         padding: 1rem;
