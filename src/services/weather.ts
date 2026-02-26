@@ -16,14 +16,14 @@ export const getWeather = async (city: string = "Lima") => {
 
         return {
             address,
-            timezone,
             conditions,
             feelslike,
             humidity,
             precipprob,
             temp,
+            timezone,
             winddir,
-            windspeed
+            windspeed,
         }
     } catch (err) {
         if (err instanceof Error) {

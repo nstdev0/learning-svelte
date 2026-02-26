@@ -5,7 +5,7 @@
 <nav>
     <Link to="/">Inicio</Link>
     <Link to="/weather">Weather</Link>
-    <Link to="/soon">Soon</Link>
+    <Link to="/pos">PoS</Link>
 </nav>
 
 <style>

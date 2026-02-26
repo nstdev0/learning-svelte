@@ -3,12 +3,12 @@
 
   interface WeatherData {
     address: string;
-    timezone: string;
     conditions: string;
     feelslike: number;
     humidity: number;
     precipprob: number;
     temp: number | string;
+    timezone: string;
     winddir: number;
     windspeed: number;
   }

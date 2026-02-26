@@ -4,6 +4,7 @@
   import Home from "./pages/Home.svelte";
 
   const loadWeather = () => import("./pages/Weather.svelte");
+  const loadPos = () => import("./pages/Pos.svelte");
 </script>
 
 <Router basepath="/">
@@ -14,6 +15,15 @@
     </Route>
     <Route path="/weather">
       {#await loadWeather()}
+        <p>Loading...</p>
+      {:then module}
+        <svelte:component this={module.default} />
+      {:catch error}
+        <p>Error al cargar la página: {error.message}</p>
+      {/await}
+    </Route>
+    <Route path="/pos">
+      {#await loadPos()}
         <p>Loading...</p>
       {:then module}
         <svelte:component this={module.default} />
