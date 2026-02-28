@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { getAbortSignal } from "svelte";
   import { getWeather } from "../services/weather";
 
   interface WeatherData {
@@ -13,60 +14,85 @@
     windspeed: number;
   }
 
+  // Estado sincronizado con el input usando bind:value
+  let searchQuery = $state("");
+
   let weatherData: WeatherData | undefined = $state(undefined);
   let error: string | null = $state(null);
-  let timeoutId: ReturnType<typeof setTimeout>;
+  let isLoading = $state(false);
 
-  const handleInput = (value: string) => {
-    error = null;
+  // Este efecto manejará tanto el debounce como la cancelación
+  $effect(() => {
+    const query = searchQuery.trim();
 
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(async () => {
-      if (value.trim() === "") {
-        weatherData = undefined;
-        return;
-      }
+    if (query === "") {
+      weatherData = undefined;
+      error = null;
+      return;
+    }
+    // 1. Obtenemos la señal aquí, de forma síncrona,
+    // mientras el $effect está activo y Svelte nos está "mirando"
+    const currentSignal = getAbortSignal();
+
+    // 2. Se configura el debounce dentro del efecto
+    const timer = setTimeout(async () => {
+      isLoading = true;
+      error = null;
+
       try {
-        const data = await getWeather(value);
+        // 3. Aquí SÍ es seguro pasar el currentSignal porque estamos
+        // indirectamente dentro del ciclo de vida del $effect.
+        // Si searchQuery cambia, Svelte cancelará la señal del fetch anterior automáticamente.
+        const data = await getWeather(query, currentSignal);
         weatherData = data;
       } catch (err) {
-        if (err instanceof Error && err.message === "CITY_NOT_FOUND") {
-          error = "City not found";
+        if (currentSignal.aborted) return;
+
+        if (err instanceof Error) {
+          if (err.name === "AbortError") return; // Se ignoran cancelaciones intencionales
+
+          if (err.message === "CITY_NOT_FOUND") {
+            error = "City not found";
+          } else {
+            error = err.message;
+          }
         }
+      } finally {
+        isLoading = false;
       }
     }, 500);
-  };
+
+    // 3. Función de limpieza del efecto:
+    // Si el usuario escribe otra letra antes de los 500ms, Svelte limpia
+    // el temporizador anterior, previniendo peticiones innecesarias.
+    return () => clearTimeout(timer);
+  });
 
   const handleClearInput = () => {
+    searchQuery = ""; // Svelte actualizará el input automáticamente
     weatherData = undefined;
+    error = null;
   };
 </script>
 
 <div class="weather-widget">
   <div class="search-box">
     <input
-      id="city-input"
       class="search-input"
       type="text"
       placeholder="City name..."
-      oninput={(e) => {
-        const value = (e.target as HTMLInputElement).value;
-        handleInput(value);
-      }}
+      bind:value={searchQuery}
     />
-    <button
-      class="clear-btn"
-      onclick={() => {
-        const input = document.getElementById("city-input") as HTMLInputElement;
-        if (input) input.value = "";
-        handleClearInput();
-      }}>Clear</button
-    >
+    <button class="clear-btn" onclick={handleClearInput}> Clear </button>
   </div>
 
-  {#if error}
+  {#if isLoading}
     <div class="weather-content placeholder">
-      <p>City not found</p>
+      <p>Buscando...</p>
+    </div>
+  {:else if error}
+    <div class="weather-content placeholder">
+      <p>{error}</p>
     </div>
   {:else if !weatherData && !error}
     <div class="weather-content placeholder">
@@ -123,11 +149,6 @@
 
 <style>
   .weather-widget {
-    font-family:
-      "Inter",
-      system-ui,
-      -apple-system,
-      sans-serif;
     max-width: 450px;
     background: linear-gradient(145deg, #bce4ff, #85c2ff);
     border-radius: 20px;

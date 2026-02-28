@@ -1,12 +1,17 @@
 const WEATHER_API_KEY = import.meta.env.VITE_WEATHER_API_KEY
 
-export const getWeather = async (city: string = "Lima") => {
+export const getWeather = async (city: string = "Lima", abortSignal: AbortSignal) => {
 
     try {
-        const response = await fetch(`https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${city}?unitGroup=metric&include=current&key=${WEATHER_API_KEY}&contentType=json`)
+        const response = await fetch(`https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${city}?unitGroup=metric&include=current&key=${WEATHER_API_KEY}&contentType=json`, {
+            signal: abortSignal
+        })
 
-        if (response.status === 400) {
-            throw new Error("CITY_NOT_FOUND")
+        if (!response.ok) {
+            if (response.status === 400) {
+                throw new Error("CITY_NOT_FOUND")
+            }
+            throw new Error(`API_ERROR: El servidor respondió con estado ${response.status}`);
         }
 
         const data = await response.json()
@@ -27,7 +32,12 @@ export const getWeather = async (city: string = "Lima") => {
         }
     } catch (err) {
         if (err instanceof Error) {
-            throw new Error(err.message)
+            if (err.name === 'AbortError') {
+                console.info(`Petición cancelada para la ciudad: ${city}`);
+                throw err;
+            }
+            throw err;
         }
+        throw new Error("Error desconocido al contactar la API del clima");
     }
 }
